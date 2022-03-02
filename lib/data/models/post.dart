@@ -6,5 +6,5 @@ class Post {
   Post.fromJson(Map json) :
       title = json['title'],
       body = json['body'],
-      id = json['id']
+      id = json['id'];
 }

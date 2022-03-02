@@ -38,8 +38,8 @@ class PostsView extends StatelessWidget {
       }, separatorBuilder: (context, index) {
         return Divider(
           color: Colors.grey[400],
-        )
-      }, itemCount: itemCount)
+        );
+      }, itemCount: posts.length);
     });
   }
 
@@ -70,6 +70,6 @@ class PostsView extends StatelessWidget {
 
         ],
       ),
-    )
+    );
   }
 }
