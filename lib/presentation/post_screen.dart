@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pagination_app/bloc/posts/posts_cubit.dart';
@@ -5,10 +7,23 @@ import 'package:pagination_app/bloc/posts/posts_cubit.dart';
 import '../data/models/post.dart';
 
 class PostsView extends StatelessWidget {
-  const PostsView({Key? key}) : super(key: key);
+  PostsView({Key? key}) : super(key: key);
+
+  final scrollController = ScrollController();
+
+  void setUpScrollController(context) {
+    scrollController.addListener(() {
+      if (scrollController.position.atEdge) {
+        if (scrollController.position.pixels != 0) {
+          BlocProvider.of<PostsCubit>(context).loadPosts();
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    setUpScrollController(context);
     BlocProvider.of<PostsCubit>(context).loadPosts();
 
     return Scaffold(
@@ -26,20 +41,35 @@ class PostsView extends StatelessWidget {
       }
 
       List<Post> posts = [];
+      bool isLoading = false;
 
       if (state is PostsLoadingState) {
         posts = state.oldPosts;
+        isLoading = true;
       } else if (state is PostsLoadedState) {
         posts = state.posts;
       }
 
-      return ListView.separated(itemBuilder: (context, index) {
-        return _post(posts[index], context);
-      }, separatorBuilder: (context, index) {
-        return Divider(
-          color: Colors.grey[400],
-        );
-      }, itemCount: posts.length);
+      return ListView.separated(
+        controller: scrollController,
+        itemBuilder: (context, index) {
+          if (index < posts.length)
+            return _post(posts[index], context);
+          else {
+            Timer(Duration(milliseconds: 30), () {
+              scrollController
+                  .jumpTo(scrollController.position.maxScrollExtent);
+            });
+            return _loadingIndicator();
+          }
+        },
+        separatorBuilder: (context, index) {
+          return Divider(
+            color: Colors.grey[400],
+          );
+        },
+        itemCount: posts.length + (isLoading ? 1 : 0),
+      );
     });
   }
 
@@ -52,22 +82,20 @@ class PostsView extends StatelessWidget {
 
   Widget _post(Post post, BuildContext context) {
     return Container(
-      width: MediaQuery
-          .of(context)
-          .size
-          .width,
+      width: MediaQuery.of(context).size.width,
       margin: const EdgeInsets.all(10.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("${post.id}. ${post.title}", style: TextStyle(
-              fontSize: 18.0,
-              color: Colors.black,
-              fontWeight: FontWeight.bold
-          ),
+          Text(
+            "${post.id}. ${post.title}",
+            style: TextStyle(
+                fontSize: 18.0,
+                color: Colors.black,
+                fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 10.0),
           Text(post.body)
-
         ],
       ),
     );
